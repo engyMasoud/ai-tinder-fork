@@ -14,7 +14,13 @@ db.exec(`
     profile_name TEXT   NOT NULL,
     action      TEXT    NOT NULL CHECK(action IN ('like', 'nope', 'superlike')),
     swiped_at   TEXT    NOT NULL
-  )
+  );
+
+  CREATE TABLE IF NOT EXISTS push_subscriptions (
+    user_id      TEXT PRIMARY KEY,
+    subscription TEXT NOT NULL,
+    created_at   TEXT NOT NULL
+  );
 `);
 
 module.exports = db;

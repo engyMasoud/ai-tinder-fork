@@ -225,6 +225,20 @@ function cyclePhoto(card) {
 // -------------------
 const API_BASE = "http://localhost:3000";
 
+// -------------------
+// User identity (persisted in localStorage so push subscriptions are tied to this browser)
+// -------------------
+const USER_ID_KEY = "tinder_user_id";
+
+function getOrCreateUserId() {
+  let userId = localStorage.getItem(USER_ID_KEY);
+  if (!userId) {
+    userId = "u_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2);
+    localStorage.setItem(USER_ID_KEY, userId);
+  }
+  return userId;
+}
+
 function recordSwipe(profile, action) {
   fetch(`${API_BASE}/api/swipes`, {
     method: "POST",
@@ -233,8 +247,68 @@ function recordSwipe(profile, action) {
       profileId:   profile.id,
       profileName: profile.name,
       action,
+      userId:      getOrCreateUserId(),
     }),
   }).catch(err => console.warn("Swipe not recorded:", err.message));
+}
+
+// -------------------
+// Push notifications
+// -------------------
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+async function setupPushNotifications() {
+  if (!("serviceWorker" in navigator)) {
+    console.log("Push: service workers not supported in this browser.");
+    return;
+  }
+  if (!("PushManager" in window)) {
+    console.log("Push: Push API not supported in this browser.");
+    return;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.register("/sw.js");
+    console.log("Push: service worker registered.");
+
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      console.log("Push: notification permission denied.");
+      return;
+    }
+
+    // Fetch the server's VAPID public key
+    const resp = await fetch(`${API_BASE}/api/push/vapid-public-key`);
+    if (!resp.ok) throw new Error("Failed to fetch VAPID public key.");
+    const { publicKey } = await resp.json();
+
+    // Subscribe through the browser's Push Manager
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+
+    // Send subscription to backend
+    const userId = getOrCreateUserId();
+    await fetch(`${API_BASE}/api/push/subscribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, subscription }),
+    });
+
+    console.log("Push: subscribed successfully. Matches will trigger notifications!");
+  } catch (err) {
+    console.warn("Push: setup failed:", err.message);
+  }
 }
 
 // -------------------
@@ -400,3 +474,4 @@ shuffleBtn.addEventListener("click",   resetDeck);
 
 // Boot
 resetDeck();
+setupPushNotifications();
