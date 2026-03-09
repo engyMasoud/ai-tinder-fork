@@ -1,0 +1,15 @@
+{
+  "name": "snow-day-backend",
+  "version": "1.0.0",
+  "description": "Swipe action API for the Tinder clone snow-day activity",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --experimental-sqlite server.js",
+    "dev": "node --experimental-sqlite --watch server.js",
+    "test": "node --experimental-sqlite --test tests/swipes.test.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}

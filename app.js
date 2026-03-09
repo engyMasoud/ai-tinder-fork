@@ -221,12 +221,33 @@ function cyclePhoto(card) {
 }
 
 // -------------------
+// Backend API
+// -------------------
+const API_BASE = "http://localhost:3000";
+
+function recordSwipe(profile, action) {
+  fetch(`${API_BASE}/api/swipes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      profileId:   profile.id,
+      profileName: profile.name,
+      action,
+    }),
+  }).catch(err => console.warn("Swipe not recorded:", err.message));
+}
+
+// -------------------
 // Card dismissal
 // -------------------
 function dismissTop(direction) {
   const card = deckEl.firstElementChild;
   if (!card || card.classList.contains("card--leaving")) return;
   card.classList.add("card--leaving");
+
+  const profile = profiles[parseInt(card.dataset.profileIdx)];
+  const action  = direction === "super" ? "superlike" : direction;
+  recordSwipe(profile, action);
 
   const likeLabel  = card.querySelector(".swipe-label--like");
   const nopeLabel  = card.querySelector(".swipe-label--nope");
