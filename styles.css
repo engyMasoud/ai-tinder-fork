@@ -116,9 +116,26 @@ body {
 }
 .card:active { cursor: grabbing; }
 
-.card:nth-child(1) { transform: translateY(0) scale(1); }
-.card:nth-child(2) { transform: translateY(10px) scale(0.985); filter: brightness(0.95); }
-.card:nth-child(3) { transform: translateY(20px) scale(0.97); filter: brightness(0.9); }
+.card--top {
+  transform: translateY(0) scale(1);
+  touch-action: none;
+  cursor: grab;
+}
+
+.card--next {
+  transform: translateY(10px) scale(0.985);
+  filter: brightness(0.95);
+}
+
+.card--back {
+  transform: translateY(20px) scale(0.97);
+  filter: brightness(0.9);
+}
+
+.card--dragging {
+  transition: none !important;
+  cursor: grabbing;
+}
 
 .card__media {
   height: 70%;
@@ -189,6 +206,17 @@ body {
   line-height: 0;
   display: grid;
   place-items: center;
+  transition: transform 120ms ease, filter 120ms ease, box-shadow 120ms ease;
+}
+
+.ctrl:active {
+  transform: scale(0.94);
+}
+
+.ctrl--feedback {
+  transform: scale(0.9);
+  filter: brightness(1.15);
+  box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.13), var(--shadow);
 }
 
 .ctrl--nope { background: var(--nope); }
